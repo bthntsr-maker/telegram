@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: telegram-gorev
+    runtime: docker
+    plan: starter
+    numInstances: 1
+    healthCheckPath: /health
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_ADMIN_IDS
+        sync: false
+      - key: WEB_HOST
+        value: 0.0.0.0
+      - key: BOT_DB
+        value: /var/data/bot.sqlite3
+    disk:
+      name: telegram-data
+      mountPath: /var/data
+      sizeGB: 1
