@@ -14,8 +14,17 @@ try {
         if($command==='/bakiye') {
             $balance=(int)query('SELECT balance FROM users WHERE id=?',[$uid])->fetchColumn();
             telegram('sendMessage',['chat_id'=>$uid,'text'=>'Bakiyeniz: '.number_format($balance/100,2,',','.').' TL']);
+        } elseif($command==='/start') {
+            $caption="👋 Hoş geldin!\n\n📩 Gmail başvurunu uygulamadan gönder.\n✅ Başvurun onaylandığında kazancın TL bakiyene eklensin.\n💸 Ödeme talebini USDT · TRC20 olarak oluştur.\n\nBaşvurularını, bakiyeni ve ödeme durumunu tek ekrandan takip et.\n\n👇 Başlamak için uygulamayı aç.";
+            $markup=['inline_keyboard'=>[[['text'=>'🚀 Uygulamayı aç','web_app'=>['url'=>config()['app_url']]]]]];
+            try {
+                telegram('sendPhoto',['chat_id'=>$uid,'photo'=>rtrim(config()['app_url'],'/').'/welcome.png','caption'=>$caption,'reply_markup'=>$markup]);
+            } catch(RuntimeException) {
+                // If the host cannot serve the banner, keep the bot usable.
+                telegram('sendMessage',['chat_id'=>$uid,'text'=>$caption,'reply_markup'=>$markup]);
+            }
         } elseif($text!=='') {
-            telegram('sendMessage',['chat_id'=>$uid,'text'=>'Görevlerini, başvurularını ve bakiyeni uygulamadan yönet.', 'reply_markup'=>['inline_keyboard'=>[[['text'=>'Uygulamayı aç','web_app'=>['url'=>config()['app_url']]]]]]]);
+            telegram('sendMessage',['chat_id'=>$uid,'text'=>'Başvurularını ve bakiyeni uygulamadan yönetebilirsin.', 'reply_markup'=>['inline_keyboard'=>[[['text'=>'🚀 Uygulamayı aç','web_app'=>['url'=>config()['app_url']]]]]]]);
         }
     }
     db()->commit();jsonResponse(200,['ok'=>true]);

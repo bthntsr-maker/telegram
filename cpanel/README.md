@@ -31,3 +31,7 @@ Yeni ödeme talepleri yalnızca USDT/TRC20 kabul eder; adres biçimi, ağ öneki
 Bakiyeler ve rezervasyon tutarları tamsayı TL kuruşudur. Kur otomatik alınmaz; admin ödeme anında USDT miktarını hesaplar. Yeni kripto talebini 'Ödendi' yapmak için pozitif USDT tutarı ve 64 hexadecimal karakterli TXID gerekir. Bunlar yapılan harici transferin kaydıdır; zincir sorgulaması veya otomatik transfer yoktur. Ret, ayrılmış TL tutarını yalnızca bir kez iade eder.
 
 Aktarım aracı eski Render verilerinin ilk taşınması içindir. Güncel MySQL'e geçildikten sonra tüm şifreli/kripto kayıtları korumak için cPanel MySQL yedeği + anahtar dosyası kullanılmalıdır. Güncel, dolu veritabanına eski JSON yedeğini tekrar içe aktarmayın.
+
+## Görselli /start mesajı
+
+`cpanel-welcome-update.zip` yalnızca app/webhook.php ve app/welcome.png içerir. public_html içine çıkarıp dosyaların üzerine yazın. Veritabanı ve config değişmez; webhook yeniden kaydı gerekmez. Kullanıcı /start gönderince karşılama görseli, açıklaması ve Uygulamayı aç düğmesi gönderilir. Telegram görseli hostingin HTTPS adresinden alır; welcome.png herkes tarafından okunabilir 0644 izinli olmalıdır. Görsel gönderilemezse metin ve düğmeyle devam edilir. Kurulumdan sonra /start ile canlı doğrulama gerekir.
