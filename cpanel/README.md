@@ -17,3 +17,17 @@ Yerel doğrulama: cpanel/tests/integration.php tek kullanımlık boş MySQL veri
 ## Gmail başvuru alanı güncellemesi
 
 `cpanel-gmail-update.zip` yalnızca app/api.php, app/app.js ve app/view.html içerir. public_html içine çıkarıp bu üç mevcut dosyanın üzerine yazın. Özel yapılandırma, şifreler ve MySQL verileri değişmez; setup.php geri eklenmez. Alan yalnızca Gmail e-posta adresi kabul eder; sunucu da aynı kontrolü uygular. Baş/son boşluklar temizlenir ve harfler küçültülür. Önceki bağlantı başvuruları geçmişte gösterilmeye devam eder. Bu kontrol adresin gerçekten var olduğunu veya kullanıcıya ait olduğunu doğrulamaz.
+
+## Gmail + şifre ve USDT/TRC20 toplu güncellemesi
+
+`cpanel-update.zip` public_html içine çıkarılır; yalnızca app/api.php, app/common.php, app/app.js, app/view.html ve app/style.css güncellenir. Kurulum dosyası veya özel config içermez. Yüklemeden önce MySQL yedeği alın. Var olan bakiyeler, başvurular ve ödeme talepleri korunur. Yeni iki yardımcı tablo ilk yetkili API isteğinde, finansal transaction başlamadan otomatik oluşturulur (DB kullanıcısında CREATE yetkisi gerekir).
+
+Gmail + şifre formunda açık iletim onayı gereklidir. Şifreler AES-256-GCM ile, başvuru numarasına bağlı doğrulanmış şifreleme kullanılarak saklanır. Şifre normal state yanıtlarında veya kullanıcı geçmişinde bulunmaz. Yalnızca yetkili admin tek kayıt üzerinden görüntüleyebilir; görüntü 30 saniye sonra temizlenir. Önceki başvurularda şifre varsa varsayılmaz.
+
+Şifreleme anahtarı ilk şifreli başvuruda `/home/botgmail/bot-encryption.key` dosyasında otomatik oluşur (0600 izin, public_html dışında). Bu dosya ve MySQL veritabanı birlikte güvenli olarak yedeklenmelidir; yalnızca SQL yedeği, anahtar kaybolursa şifreleri kurtarmaz. Anahtarı sohbete/GitHub'a göndermeyin, public_html'e koymayın, yeni bir anahtarla değiştirmeyin. Yerel testte BOT_KEY_FILE yalnızca geçici test yolu için kullanılabilir. OpenSSL PHP eklentisi gereklidir. Kaynak kod güncellemek bu anahtarı veya özel config'i değiştirmez.
+
+Yeni ödeme talepleri yalnızca USDT/TRC20 kabul eder; adres biçimi, ağ öneki ve Base58Check sağlama toplamı sunucuda doğrulanır. Bu, adresin USDT alıcısı olduğunu, kullanıcıya ait olduğunu veya belirli bir borsanın desteklediğini kanıtlamaz. Önceki IBAN talepleri 'Eski ödeme talebi' olarak görünür ve kripto taleplerine otomatik dönüştürülmez.
+
+Bakiyeler ve rezervasyon tutarları tamsayı TL kuruşudur. Kur otomatik alınmaz; admin ödeme anında USDT miktarını hesaplar. Yeni kripto talebini 'Ödendi' yapmak için pozitif USDT tutarı ve 64 hexadecimal karakterli TXID gerekir. Bunlar yapılan harici transferin kaydıdır; zincir sorgulaması veya otomatik transfer yoktur. Ret, ayrılmış TL tutarını yalnızca bir kez iade eder.
+
+Aktarım aracı eski Render verilerinin ilk taşınması içindir. Güncel MySQL'e geçildikten sonra tüm şifreli/kripto kayıtları korumak için cPanel MySQL yedeği + anahtar dosyası kullanılmalıdır. Güncel, dolu veritabanına eski JSON yedeğini tekrar içe aktarmayın.
