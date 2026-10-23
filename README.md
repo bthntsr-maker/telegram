@@ -61,3 +61,5 @@ Veritabanı `/tmp/telegram-data/bot.sqlite3` altında geçicidir; yeniden dağı
 Ücretsiz servis boşta kalınca uyuyabilir. Telegram polling tek başına servisi uyanık tutmaz; uyuyan bot mesaja yanıt vermeyebilir. Önce Render'ın HTTPS adresini tarayıcıda açıp servisin uyanmasını bekleyin, ardından Telegram'a dönün. Sürekli erişim garanti edilmez.
 Ödeme talepleri yalnızca deneme içindir; gerçek para transferi otomatik yapılmaz.
 Kalıcı gerçek kullanım için ileride güvenilir kalıcı veritabanı ve sürekli çalışan barındırma gerekir.
+
+Render üzerinde bot uygulama adresini otomatik `RENDER_EXTERNAL_URL` değişkeninden alır. İsteğe bağlı `MINI_APP_URL` geçerli bir HTTPS adresiyse önceliklidir. Güncellemeden sonra Telegram özel sohbetinde yeniden `/start` gönderin.

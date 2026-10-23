@@ -58,6 +58,18 @@ def send(chat, text):
     return api('sendMessage', chat_id=chat, text=text)
 
 
+def mini_app_url():
+    for name in ('MINI_APP_URL', 'RENDER_EXTERNAL_URL'):
+        value = os.environ.get(name, '').strip()
+        try:
+            parsed = urlsplit(value)
+            if parsed.scheme == 'https' and parsed.hostname and not parsed.username and not parsed.password:
+                return value
+        except ValueError:
+            continue
+    return ''
+
+
 def handle(update):
     msg = update.get('message', {})
     if msg.get('chat', {}).get('type') != 'private':
@@ -69,9 +81,8 @@ def handle(update):
         return
     command, _, rest = text.partition(' ')
     if command == '/start':
-        app_url = os.environ.get('MINI_APP_URL', '')
-        parsed = urlsplit(app_url)
-        if parsed.scheme == 'https' and parsed.hostname and not parsed.username and not parsed.password:
+        app_url = mini_app_url()
+        if app_url:
             api('sendMessage', chat_id=uid, text='Görevlerini ve bakiyeni uygulamadan yönet.',
                 reply_markup={'inline_keyboard': [[{'text': 'Uygulamayı aç', 'web_app': {'url': app_url}}]]})
         send(uid, 'Görev başvurusu: /basvuru ardından şifre içermeyen kanıt bağlantısını yazın.\nBakiyeniz: /bakiye\nGmail şifresi veya başka erişim bilgisi göndermeyin.')
