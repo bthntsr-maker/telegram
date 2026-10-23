@@ -73,6 +73,7 @@ def dispatch(path, user, body):
         if path == '/api/state':
             result = {'name':user.get('first_name','Kullanıcı'), 'admin':admin,
                       'demo':os.environ.get('DEMO_MODE') == 'true' and not os.environ.get('DATABASE_URL'),
+                      'storage': 'postgresql' if os.environ.get('DATABASE_URL') else 'sqlite-temporary',
                       'balance':con.execute('SELECT balance FROM users WHERE id=?',(uid,)).fetchone()[0]}
             for table in ('submissions','withdrawals'):
                 fields = 'id,proof,status,amount' if table=='submissions' else 'id,amount,destination,status'
@@ -160,7 +161,13 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = self.path.split('?',1)[0]
-        if path=='/health': return self.reply(200,{'ok':True})
+        if path=='/health':
+            try:
+                with connect() as con:
+                    con.execute('SELECT 1').fetchone()
+                return self.reply(200, {'ok': True, 'storage': 'postgresql' if os.environ.get('DATABASE_URL') else 'sqlite-temporary'})
+            except Exception:
+                return self.reply(503, {'ok': False, 'error': 'database-unavailable'})
         files={'/':('index.html','text/html; charset=utf-8'),'/app.js':('app.js','application/javascript'),'/style.css':('style.css','text/css')}
         if path not in files: return self.reply(404,{'error':'Bulunamadı'})
         name, mime = files[path]

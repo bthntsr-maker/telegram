@@ -3,6 +3,7 @@ import json
 import os
 import time
 import urllib.request
+import urllib.error
 from urllib.parse import urlsplit
 import database
 
@@ -136,6 +137,9 @@ def main():
             for update in api('getUpdates', offset=offset, timeout=25, allowed_updates=['message']):
                 handle(update)
                 offset = update['update_id'] + 1
+        except urllib.error.HTTPError as exc:
+            print(f'Telegram HTTP durum: {exc.code}', flush=True)
+            time.sleep(3)
         except Exception as exc:
             # Never log HTTP exception URLs: Telegram embeds the token in the URL.
             print(f'İşlem hatası: {type(exc).__name__}', flush=True)
