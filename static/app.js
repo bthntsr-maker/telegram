@@ -31,4 +31,18 @@ bind('#credit-form','admin/credit',d=>({amount:cents(d.get('amount')),user_id:Nu
 $('#refresh').onclick=()=>load().then(()=>notice('Bilgiler güncellendi.')).catch(e=>notice(e.message,true));
 load().then(()=>notice('Hesabın güncel.')).catch(e=>notice(e.message,true));
 
-$('#export-backup').onclick=async()=>{const b=$('#export-backup');b.disabled=true;try{const data=await api('admin/export');const url=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'}));const a=node('a');a.href=url;a.download='telegram-yedek.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notice('Yedek indirildi. Güvenli saklayın.');}catch(e){notice(e.message,true);}finally{b.disabled=false;}};
+$('#export-backup').onclick=async()=>{
+ const b=$('#export-backup');b.disabled=true;
+ try{
+  const data=await api('admin/export');const text=JSON.stringify(data);
+  let box=$('#backup-copy');if(box)box.remove();
+  box=node('section');box.id='backup-copy';
+  box.append(node('p','Dosya inmiyorsa aşağıdaki yedeğin tamamını kopyalayıp bilgisayarında telegram-yedek.json adıyla kaydet. Yedek özel bilgiler içerir; sohbete gönderme.'));
+  const label=node('label','Yedek verisi');const area=node('textarea');area.readOnly=true;area.value=text;area.rows=8;area.setAttribute('aria-label','Yedek JSON verisi');label.append(area);box.append(label);
+  const copy=node('button','Tümünü seç ve kopyala');copy.type='button';
+  copy.onclick=async()=>{area.focus();area.select();area.setSelectionRange(0,area.value.length);try{await navigator.clipboard.writeText(area.value);notice('Yedek panoya kopyalandı. Güvenli bir dosyaya kaydet.');}catch{notice('Yedek seçildi. Ctrl+C ile kopyala veya metne basılı tutup Kopyala seç.');}};
+  const download=node('button','Dosya indirmeyi dene');download.type='button';
+  download.onclick=()=>{const url=URL.createObjectURL(new Blob([text],{type:'application/json'}));const a=node('a');a.href=url;a.download='telegram-yedek.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);notice('İndirme isteği gönderildi. Dosya oluşmazsa kopyalama seçeneğini kullan.');};
+  box.append(copy,download);b.after(box);area.focus();notice('Yedek hazır. İndirebilir veya kopyalayabilirsin.');
+ }catch(e){notice(e.message,true);}finally{b.disabled=false;}
+};
