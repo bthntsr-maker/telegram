@@ -1,6 +1,6 @@
 # Telegram görev ve bakiye botu
 
-Python 3.12+; harici bağımlılık gerektirmez. İlk sürüm Telegram özel mesajları üzerinden çalışır.
+Python 3.12+. PostgreSQL için `pip install -r requirements.txt` çalıştırın. İlk sürüm Telegram özel mesajları üzerinden çalışır.
 
 ## Başlatma
 
@@ -32,7 +32,7 @@ Canlı Telegram doğrulaması için token ve admin kimlikleri gereklidir. Harici
 ## Telegram Mini App
 
 `python web.py` Mini App'i başlatır (varsayılan: 127.0.0.1:8080).
-Statik ekran ve API aynı sunucudan sunulur; harici Python bağımlılığı yoktur.
+Statik ekran ve API aynı sunucudan sunulur. PostgreSQL için psycopg bağımlılığı kullanılır.
 Üretimde HTTPS reverse proxy kullanın; container barındırma için `WEB_HOST=0.0.0.0` ve hizmetin verdiği `PORT` kullanılabilir.
 Tokenı veya admin kimliğini istemci dosyalarına koymayın.
 
@@ -63,3 +63,16 @@ Veritabanı `/tmp/telegram-data/bot.sqlite3` altında geçicidir; yeniden dağı
 Kalıcı gerçek kullanım için ileride güvenilir kalıcı veritabanı ve sürekli çalışan barındırma gerekir.
 
 Render üzerinde bot uygulama adresini otomatik `RENDER_EXTERNAL_URL` değişkeninden alır. İsteğe bağlı `MINI_APP_URL` geçerli bir HTTPS adresiyse önceliklidir. Güncellemeden sonra Telegram özel sohbetinde yeniden `/start` gönderin.
+
+## Ücretsiz kalıcı PostgreSQL
+
+`DATABASE_URL` ayarlanırsa tüm bot ve Mini App kayıtları PostgreSQL'e yazılır; ayarlanmazsa mevcut SQLite davranışı devam eder. Render Docker kurulumu bağımlılığı otomatik yükler.
+
+Supabase'te ücretsiz proje oluşturun. Connect bölümünde PostgreSQL **Session pooler** bağlantısını seçin (IPv4 destekli; genellikle 5432 portu). Render → Environment içinde `DATABASE_URL` anahtarına gerçek bağlantı dizesini güvenli olarak kaydedin. Şifreyi sohbete, GitHub'a veya ekran görüntüsüne koymayın; özel karakterler URL biçiminde kodlanmalıdır. Transaction pooler yerine session pooler kullanın.
+
+Üretim bağlantısında TLS sertifikası ve sunucu adı doğrulanır (`verify-full`). Sistem kök sertifikaları varsayılandır. Proje sertifikası gerekirse resmi Supabase proje ayarlarından indirilmiş CA sertifikasını Render Secret File olarak ekleyip `PGSSLROOTCERT` değişkenini dosya yoluna ayarlayın. Doğrulamayı kapatmayın.
+
+Kaydetme sonrası Render yeniden dağıtılır ve tablolar otomatik oluşur. Yeni veritabanı boş başlar; önceki SQLite deneme kayıtları otomatik taşınmaz. Render'daki mevcut kayıtlar gerekiyorsa yeniden dağıtımdan önce yedeklenmelidir.
+
+Bağlantı sonrası uygulamada yeni test başvurusu onaylayın, servisi yeniden dağıtın ve bakiyenin korunduğunu kontrol edin. Supabase hesabı/bağlantısı sağlanmadan canlı kalıcılık doğrulanmış sayılmaz.
+Ücretsiz Supabase kotası ve hareketsizlik politikaları geçerlidir; Render da uyuyabilir. Kalıcı veritabanı tek başına yedek veya 7/24 erişim garantisi sağlamaz. Gerçek paradan önce düzenli dış yedek ve geri yükleme denemesi gerekir.

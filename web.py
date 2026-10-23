@@ -72,7 +72,7 @@ def dispatch(path, user, body):
         con.execute('INSERT OR IGNORE INTO users(id) VALUES (?)',(uid,))
         if path == '/api/state':
             result = {'name':user.get('first_name','Kullanıcı'), 'admin':admin,
-                      'demo':os.environ.get('DEMO_MODE') == 'true',
+                      'demo':os.environ.get('DEMO_MODE') == 'true' and not os.environ.get('DATABASE_URL'),
                       'balance':con.execute('SELECT balance FROM users WHERE id=?',(uid,)).fetchone()[0]}
             for table in ('submissions','withdrawals'):
                 fields = 'id,proof,status,amount' if table=='submissions' else 'id,amount,destination,status'
@@ -185,7 +185,8 @@ class Handler(BaseHTTPRequestHandler):
 if __name__=='__main__':
     if not os.environ.get('TELEGRAM_BOT_TOKEN') or not admins():
         raise SystemExit('Token ve admin kimlikleri gerekli')
-    connect().close()
+    with connect():
+        pass
     server = ThreadingHTTPServer((os.environ.get('WEB_HOST','127.0.0.1'),int(os.environ.get('PORT','8080'))),Handler)
     server.daemon_threads=True
     print('Mini App sunucusu hazır.',flush=True)

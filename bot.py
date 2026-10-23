@@ -1,17 +1,16 @@
 """Telegram task/reward bot. Python 3.12+, standard library only."""
 import json
 import os
-import sqlite3
 import time
 import urllib.request
 from urllib.parse import urlsplit
+import database
 
 DB = os.environ.get('BOT_DB', '/workspace/telegram-data/bot.sqlite3')
 
 
 def connect():
-    os.makedirs(os.path.dirname(os.path.abspath(DB)), exist_ok=True)
-    con = sqlite3.connect(DB)
+    con = database.connect(DB)
     con.execute('PRAGMA foreign_keys=ON')
     con.executescript('''
     CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, balance INTEGER NOT NULL DEFAULT 0);
@@ -127,7 +126,8 @@ def main():
     ADMINS = {int(x.strip()) for x in os.environ.get('TELEGRAM_ADMIN_IDS', '').split(',') if x.strip()}
     if not TOKEN or not ADMINS:
         raise SystemExit('TELEGRAM_BOT_TOKEN ve TELEGRAM_ADMIN_IDS güvenli ortam ayarlarında tanımlanmalı.')
-    connect().close()
+    with connect():
+        pass
     api('getMe')
     offset = 0
     print('Bot başladı.', flush=True)
