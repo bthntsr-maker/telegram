@@ -1,0 +1,5 @@
+Options -Indexes
+DirectoryIndex index.php
+<FilesMatch "^(auth\.php|session\.php|view\.html)$">
+    Require all denied
+</FilesMatch>

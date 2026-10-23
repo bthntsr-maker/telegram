@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-require __DIR__.'/common.php';
+require_once __DIR__.'/common.php';
 function dispatch(string $path,array $u,array $b): array {
     $uid=$u['id'];$admin=isAdmin($uid);ensureUser($uid);
     if($path==='state') {

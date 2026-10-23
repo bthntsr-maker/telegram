@@ -35,3 +35,19 @@ Aktarım aracı eski Render verilerinin ilk taşınması içindir. Güncel MySQL
 ## Görselli /start mesajı
 
 `cpanel-welcome-update.zip` yalnızca app/webhook.php ve app/welcome.png içerir. public_html içine çıkarıp dosyaların üzerine yazın. Veritabanı ve config değişmez; webhook yeniden kaydı gerekmez. Kullanıcı /start gönderince karşılama görseli, açıklaması ve Uygulamayı aç düğmesi gönderilir. Telegram görseli hostingin HTTPS adresinden alır; welcome.png herkes tarafından okunabilir 0644 izinli olmalıdır. Görsel gönderilemezse metin ve düğmeyle devam edilir. Kurulumdan sonra /start ile canlı doğrulama gerekir.
+
+## Tarayıcı yönetim paneli: /admin
+
+`cpanel-admin-update.zip` dosyasını public_html içine çıkarın. Yeni admin/ klasörü oluşur ve app/api.php paylaşılmış işlem kodunu kullanmak üzere güncellenir. public_html/index.php, özel config, şifreleme anahtarı, setup.php ve webhook değiştirilmez. Dosyalar 0644, klasörler 0755 olmalıdır. Mevcut MySQL verileri korunur.
+
+https://botgmail.xyz/admin/ adresini normal tarayıcıdan açın. İlk açılışta özel bot-config.php dosyasındaki mevcut setup_key değerini girip yeni bir kullanıcı adı ve 12–72 karakter güçlü şifre belirleyin. Şifreyi sohbete göndermeyin. Hesap yalnızca bir kez oluşturulabilir; sonraki girişlerde yalnızca kullanıcı adı/şifre gerekir. Ayrı bir Telegram komutu, BotFather değişikliği veya yeni webhook gerekmez.
+
+Şifre password_hash ile hash olarak `/home/botgmail/bot-admin-auth.json` dosyasına kaydedilir (0600, public_html dışında); düz metin saklanmaz. Hesap, config'teki ilk yetkili admin Telegram kimliğiyle mevcut işlem yetkilerini kullanır. Config'teki bu yetki kaldırılırsa tarayıcı erişimi de kapanır. Mevcut Mini App yönetimi etkilenmez.
+
+Oturum Secure/HttpOnly/SameSite=Strict çereziyle tutulur. Her POST isteğinde CSRF kontrolü yapılır. Girişte oturum kimliği yenilenir; 30 dakika hareketsizlik veya 8 saat sonunda yeniden giriş gerekir (hosting oturum politikasına göre daha erken bitebilir). Her IP adresi için 15 dakikada 5 başarısız/başarısızlıkla sonuçlanabilecek giriş denemesinden sonra bekleme uygulanır. Yanlış giriş sayacı başarılı girişte temizlenir. Proxy arkasındaki gerçek IP yapılandırması hosting sağlayıcısına aittir; istemciden gelen X-Forwarded-For güvenilmez.
+
+Panel başvuru onayı/ret, şifre görüntüleme, TL bakiye ekleme, TRC20 ödeme kayıtları ve kullanıcı listesi içerir. Aramalar ekranda yüklenmiş son 100 kayıt üzerinde çalışır. Giriş ve gerçek finansal akışlar yerel, atılabilir MySQL/PHP ortamında test edilmiştir; canlı hosting doğrulaması yüklemeden sonra yapılır.
+
+Yönetici şifresi unutulursa cPanel yetkisiyle özel bot-admin-auth.json dosyası güvenli biçimde yedeklenip farklı ada taşınarak yeniden ilk kurulum yapılabilir. Mevcut oturumlar kayıtlı hash değiştiğinde geçersizleşir. bot-encryption.key dosyasına dokunmayın; hesap şifresini sıfırlamak uygulama hesap şifrelerini çözmek için gereken anahtarı değiştirmez.
+
+Testler: cpanel/tests/test_admin_http.py yalnızca kendi açıklamasındaki atılabilir, yerel test ortamında çalıştırılır; canlı sisteme karşı çalıştırmayın. Testler ilk hesap oluşturur ve giriş sayacını doldurur.
