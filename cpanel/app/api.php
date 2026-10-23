@@ -13,8 +13,10 @@ function dispatch(string $path,array $u,array $b): array {
         return $r;
     }
     if($path==='submit') {
-        $p=$b['proof']??'';$parsed=is_string($p)?parse_url($p):false;
-        if(!$parsed||strlen($p)>1000||preg_match('/\s/',$p)||($parsed['scheme']??'')!=='https'||empty($parsed['host'])||isset($parsed['user'])||isset($parsed['pass']))throw new InvalidArgumentException('Geçerli HTTPS kanıt bağlantısı gerekli');
+        $p=$b['proof']??'';
+        if(!is_string($p))throw new InvalidArgumentException('Yalnızca geçerli bir @gmail.com adresi gönderin');
+        $p=strtolower(trim($p));
+        if(strlen($p)>254 || !filter_var($p,FILTER_VALIDATE_EMAIL) || !preg_match('/^[a-z0-9]+(?:\.[a-z0-9]+)*(?:\+[a-z0-9._-]+)?@gmail\.com$/D',$p))throw new InvalidArgumentException('Yalnızca geçerli bir @gmail.com adresi gönderin');
         $r=rid($b);query('SELECT id FROM users WHERE id=? FOR UPDATE',[$uid]);
         $old=query('SELECT submission_id FROM web_submissions WHERE user_id=? AND request_id=?',[$uid,$r])->fetch();
         if($old)return ['id'=>(int)$old['submission_id']];

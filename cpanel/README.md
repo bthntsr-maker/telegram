@@ -13,3 +13,7 @@ Mevcut public_html/index.php ve php.ini dosyalarına dokunmayın.
 Anahtarlar şifre/token değildir ancak güçlü ve gizli tutulmalıdır. Gerçek tokenı sohbete, URL parametresine, GitHub'a veya ekran görüntüsüne koymayın. Yetkilendirme Telegram initData üzerinden sunucuda doğrulanır; admin paneli Telegram Mini App içinde çalışır. Bağımsız tarayıcı admin girişi bu pakette yoktur.
 
 Yerel doğrulama: cpanel/tests/integration.php tek kullanımlık boş MySQL veritabanında çalıştırılmalıdır (test verilerini temizler!). BOT_CONFIG_FILE ile sadece test veritabanını tanımlayan özel bir PHP config dosyasının yolunu verin. Üretimde test dosyalarını yüklemeyin.
+
+## Gmail başvuru alanı güncellemesi
+
+`cpanel-gmail-update.zip` yalnızca app/api.php, app/app.js ve app/view.html içerir. public_html içine çıkarıp bu üç mevcut dosyanın üzerine yazın. Özel yapılandırma, şifreler ve MySQL verileri değişmez; setup.php geri eklenmez. Alan yalnızca Gmail e-posta adresi kabul eder; sunucu da aynı kontrolü uygular. Baş/son boşluklar temizlenir ve harfler küçültülür. Önceki bağlantı başvuruları geçmişte gösterilmeye devam eder. Bu kontrol adresin gerçekten var olduğunu veya kullanıcıya ait olduğunu doğrulamaz.

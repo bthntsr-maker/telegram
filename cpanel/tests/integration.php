@@ -7,7 +7,13 @@ function callApi(string $path,array $body=[],int $uid=123):array {
     catch(Throwable $e){db()->rollBack();throw $e;}
 }
 initialize();
-$proof=['proof'=>'https://example.org/proof','request_id'=>'submission-test-12345'];
+$proof=['proof'=>'test.user@gmail.com','request_id'=>'submission-test-12345'];
+foreach(['user@example.com','user@gmail.com.evil','https://gmail.com','x@@gmail.com','a..b@gmail.com','a@gmail.com'."\nextra",''] as $invalid){
+    try{callApi('submit',['proof'=>$invalid,'request_id'=>'invalid-email-12345']);throw new LogicException('invalid accepted');}catch(InvalidArgumentException){}
+}
+echo "PASS non-Gmail and malformed addresses rejected\n";
+$normalized=callApi('submit',['proof'=>'  Test.User@GMAIL.COM  ','request_id'=>'normalized-email-12345']);
+check(query('SELECT proof FROM submissions WHERE id=?',[$normalized['id']])->fetchColumn()==='test.user@gmail.com','Gmail case and whitespace normalized');
 $s=callApi('submit',$proof);check(callApi('submit',$proof)['id']===$s['id'],'submission retry');
 try{callApi('admin/credit',['user_id'=>123,'amount'=>1000,'request_id'=>'credit-test-1234567']);throw new RuntimeException('permission failed');}catch(DomainException){echo "PASS admin authorization\n";}
 callApi('admin/submission',['id'=>$s['id'],'action'=>'approve','amount'=>2500],999);
@@ -31,4 +37,4 @@ try{callApi('admin/import',['backup'=>$backup],999);throw new LogicException('no
 foreach(['web_submissions','credits','withdrawals','submissions','users'] as $t)query("DELETE FROM $t");
 callApi('admin/import',['backup'=>$backup],999);
 check(callApi('state')['balance']===3500,'import preserves balance');
-check(count(callApi('state')['submissions'])===1,'import preserves history');
+check(count(callApi('state')['submissions'])===2,'import preserves history');
