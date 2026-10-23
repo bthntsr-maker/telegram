@@ -56,6 +56,11 @@ class WebTests(unittest.TestCase):
         approval={'id':s['id'],'action':'approve','amount':2500}
         self.assertEqual(self.call('admin/submission',approval,999)[0],200)
         self.assertEqual(self.call('admin/submission',approval,999)[0],400)
+        self.assertEqual(self.call('admin/export')[0],403)
+        status,backup=self.call('admin/export',uid=999)
+        self.assertEqual(status,200)
+        self.assertEqual(backup['format'],'telegram-wallet-v1')
+        self.assertEqual(next(r for r in backup['tables']['users'] if r['id']==123)['balance'],2500)
         self.assertEqual(self.call('state')[1]['balance'],2500)
         wd={'amount':2000,'destination':'Test alıcı TR12345678','request_id':'withdraw-123456789'}
         status,w=self.call('withdraw',wd);self.assertEqual(status,200)

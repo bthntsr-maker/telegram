@@ -110,6 +110,11 @@ def dispatch(path, user, body):
             return {'id':wid}
         if path.startswith('/api/admin/'):
             if not admin: raise PermissionError('Admin yetkisi gerekli')
+            if path == '/api/admin/export':
+                tables = {}
+                for table in ('users','submissions','withdrawals','credits','web_submissions'):
+                    tables[table] = [dict(row) for row in con.execute(f'SELECT * FROM {table}')]
+                return {'format': 'telegram-wallet-v1', 'tables': tables}
             if path == '/api/admin/credit':
                 cents = amount(body.get('amount'))
                 target = body.get('user_id')

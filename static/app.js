@@ -30,3 +30,5 @@ bind('#withdraw-form','withdraw',d=>({amount:cents(d.get('amount')),destination:
 bind('#credit-form','admin/credit',d=>({amount:cents(d.get('amount')),user_id:Number(d.get('user_id'))}));
 $('#refresh').onclick=()=>load().then(()=>notice('Bilgiler güncellendi.')).catch(e=>notice(e.message,true));
 load().then(()=>notice('Hesabın güncel.')).catch(e=>notice(e.message,true));
+
+$('#export-backup').onclick=async()=>{const b=$('#export-backup');b.disabled=true;try{const data=await api('admin/export');const url=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'}));const a=node('a');a.href=url;a.download='telegram-yedek.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notice('Yedek indirildi. Güvenli saklayın.');}catch(e){notice(e.message,true);}finally{b.disabled=false;}};
