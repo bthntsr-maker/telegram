@@ -72,6 +72,7 @@ def dispatch(path, user, body):
         con.execute('INSERT OR IGNORE INTO users(id) VALUES (?)',(uid,))
         if path == '/api/state':
             result = {'name':user.get('first_name','Kullanıcı'), 'admin':admin,
+                      'demo':os.environ.get('DEMO_MODE') == 'true',
                       'balance':con.execute('SELECT balance FROM users WHERE id=?',(uid,)).fetchone()[0]}
             for table in ('submissions','withdrawals'):
                 fields = 'id,proof,status,amount' if table=='submissions' else 'id,amount,destination,status'

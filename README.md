@@ -47,16 +47,17 @@ Bakiye ekleme ve kullanıcı formları işlem kimliğiyle tekrar gönderime kar�
 Başvuru/ödeme geçmişinin en son 100 kaydı ve ilk 100 bekleyen işlem gösterilir.
 Üretim öncesi HTTPS, otomatik süreç yeniden başlatma, kalıcı disk ve düzenli şifreli veritabanı yedekleri ayarlayın. SQLite dosyası ödeme alıcısı/IBAN içerir; erişimini sınırlayın.
 
-## Render kurulumu
+## Render ücretsiz deneme kurulumu
 
-`render.yaml` tek ücretli web servisi ve 1 GB kalıcı disk tanımlar. Güncel fiyatı Render'da kontrol edin; Blueprint oluşturulması ücret doğurabilir.
+`render.yaml` ücretsiz (`plan: free`) web servisi tanımlar. Ücretli disk talep etmez.
+Veritabanı `/tmp/telegram-data/bot.sqlite3` altında geçicidir; yeniden dağıtım/yeniden başlatma sırasında kayıtlar silinebilir. Gerçek para bakiyeleri için kullanmayın. Uygulama deneme uyarısı gösterir.
 
-1. Render Dashboard → New → Blueprint ile `bthntsr-maker/telegram` deposunu bağlayın.
-2. `TELEGRAM_BOT_TOKEN` ve `TELEGRAM_ADMIN_IDS` değerlerini Render'ın güvenli alanlarına girin.
-3. Planı, diski ve fiyatı kontrol edip dağıtımı başlatın. `run.py` web ve bot süreçlerini birlikte yönetir.
-4. Render'ın verdiği HTTPS adresini servisin Environment bölümünde `MINI_APP_URL` olarak ekleyip servisi yeniden dağıtın.
-5. Aynı tokenı kullanan geliştirme botunu durdurun; yalnızca Render polling yapsın. BotFather'da webhook/başka bir dağıtım varsa önce inceleyin.
-6. Telegram'da `/start` yazıp Uygulamayı aç düğmesine basın. Başvuru, admin onayı ve bakiye güncellemesini gerçek Telegram oturumunda doğrulayın.
+1. Render Dashboard → New → Blueprint ile `bthntsr-maker/telegram` deposunu ve `main` dalını bağlayın.
+2. Planın **Free** olduğunu kontrol edin. Daha önce ücretli olarak oluşturulmuş servisin otomatik olarak ücretsiz hale geldiğini varsaymayın. Var olan bir serviste değişiklikten önce Render planını ayrıca kontrol edin.
+3. `TELEGRAM_BOT_TOKEN` ve `TELEGRAM_ADMIN_IDS` değerlerini Render güvenli ortam alanlarına girin.
+4. Dağıtım tamamlandığında verilen HTTPS adresini Environment bölümünde `MINI_APP_URL` olarak ekleyip servisi yeniden dağıtın.
+5. Aynı tokenla başka bir polling botu çalıştırmayın. Telegram'da `/start` yazıp Uygulamayı aç düğmesini deneyin.
 
-Kalıcı disk zorunludur; ücretsiz/kalıcı disksiz servis bakiye verilerini güvenle tutmaz. Tek replika kullanın.
-Bu yapılandırma mevcut geliştirme verilerini otomatik taşımaz. Render boş veritabanıyla başlar; mevcut bakiye/ödeme kaydı varsa geçişten önce güvenli SQLite yedeği alın ve taşıyın.
+Ücretsiz servis boşta kalınca uyuyabilir. Telegram polling tek başına servisi uyanık tutmaz; uyuyan bot mesaja yanıt vermeyebilir. Önce Render'ın HTTPS adresini tarayıcıda açıp servisin uyanmasını bekleyin, ardından Telegram'a dönün. Sürekli erişim garanti edilmez.
+Ödeme talepleri yalnızca deneme içindir; gerçek para transferi otomatik yapılmaz.
+Kalıcı gerçek kullanım için ileride güvenilir kalıcı veritabanı ve sürekli çalışan barındırma gerekir.
