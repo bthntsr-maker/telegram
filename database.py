@@ -61,3 +61,38 @@ def connect(sqlite_path):
     if url: return Postgres(url)
     os.makedirs(os.path.dirname(os.path.abspath(sqlite_path)), exist_ok=True)
     return sqlite3.connect(sqlite_path)
+
+
+class PollingLease:
+    """One polling owner per database/token; requires a session pooler."""
+    def __init__(self, sqlite_path, token):
+        import hashlib
+        self.key = int.from_bytes(hashlib.sha256(token.encode()).digest()[:8], 'big', signed=True)
+        self.path = sqlite_path + '.polling.lock'
+        self.pg = None
+        self.file = None
+
+    def __enter__(self):
+        import time
+        if os.environ.get('DATABASE_URL'):
+            self.pg = Postgres(os.environ['DATABASE_URL']).connection
+            self.pg.autocommit = True
+            while not self.pg.execute('SELECT pg_try_advisory_lock(%s)', (self.key,)).fetchone()[0]:
+                print('Diğer bot sürecinin kapanması bekleniyor.', flush=True)
+                time.sleep(5)
+        else:
+            import fcntl
+            os.makedirs(os.path.dirname(os.path.abspath(self.path)), exist_ok=True)
+            self.file = open(self.path, 'a')
+            fcntl.flock(self.file.fileno(), fcntl.LOCK_EX)
+        return self
+
+    def check(self):
+        if self.pg:
+            self.pg.execute('SELECT 1').fetchone()
+
+    def __exit__(self, *_):
+        if self.pg:
+            self.pg.close()
+        if self.file:
+            self.file.close()

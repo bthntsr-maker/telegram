@@ -130,20 +130,32 @@ def main():
     with connect():
         pass
     api('getMe')
-    offset = 0
-    print('Bot başladı.', flush=True)
-    while True:
-        try:
-            for update in api('getUpdates', offset=offset, timeout=25, allowed_updates=['message']):
-                handle(update)
-                offset = update['update_id'] + 1
-        except urllib.error.HTTPError as exc:
-            print(f'Telegram HTTP durum: {exc.code}', flush=True)
-            time.sleep(3)
-        except Exception as exc:
-            # Never log HTTP exception URLs: Telegram embeds the token in the URL.
-            print(f'İşlem hatası: {type(exc).__name__}', flush=True)
-            time.sleep(3)
+    with database.PollingLease(DB, TOKEN) as lease:
+        offset = 0
+        print('Bot başladı.', flush=True)
+        while True:
+            lease.check()  # Loss of the ownership connection exits polling.
+            try:
+                for update in api('getUpdates', offset=offset, timeout=25, allowed_updates=['message']):
+                    handle(update)
+                    offset = update['update_id'] + 1
+            except urllib.error.HTTPError as exc:
+                reason = 'bilinmiyor'
+                if exc.code == 409:
+                    try:
+                        description = json.loads(exc.read(4096)).get('description', '')
+                        if 'other getUpdates' in description:
+                            reason = 'başka bir polling süreci etkin'
+                        elif 'webhook' in description.lower():
+                            reason = 'webhook etkin'
+                    except (ValueError, OSError):
+                        pass
+                print(f'Telegram HTTP durum: {exc.code}; neden: {reason}', flush=True)
+                time.sleep(3)
+            except Exception as exc:
+                # Never log HTTP exception URLs: Telegram embeds the token in the URL.
+                print(f'İşlem hatası: {type(exc).__name__}', flush=True)
+                time.sleep(3)
 
 
 if __name__ == '__main__':

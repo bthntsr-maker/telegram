@@ -76,3 +76,5 @@ Kaydetme sonrası Render yeniden dağıtılır ve tablolar otomatik oluşur. Yen
 
 Bağlantı sonrası uygulamada yeni test başvurusu onaylayın, servisi yeniden dağıtın ve bakiyenin korunduğunu kontrol edin. Supabase hesabı/bağlantısı sağlanmadan canlı kalıcılık doğrulanmış sayılmaz.
 Ücretsiz Supabase kotası ve hareketsizlik politikaları geçerlidir; Render da uyuyabilir. Kalıcı veritabanı tek başına yedek veya 7/24 erişim garantisi sağlamaz. Gerçek paradan önce düzenli dış yedek ve geri yükleme denemesi gerekir.
+
+Polling için PostgreSQL oturum kilidi kullanılır: aynı veritabanı ve tokenla yalnızca bir güncel süreç getUpdates çalıştırabilir. Bağlantı kesilirse süreç polling'i durdurur; run.py servisi yeniden başlatılmak üzere sonlandırır. Session pooler gereklidir. Bu kilit eski sürümleri veya farklı veritabanıyla çalışan başka bir botu durdurmaz. 409 logu 'başka bir polling süreci etkin' demeye devam ederse başka dağıtımlar incelenmelidir. İlk geçişte eski Render sürecinin tamamen kapanması gerekir.
