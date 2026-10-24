@@ -67,7 +67,9 @@ function cents(mixed $v): int { if(!is_int($v)||$v<1||$v>100000000)throw new Inv
 function rid(array $b): string { $r=$b['request_id']??'';if(!is_string($r)||strlen($r)<16||strlen($r)>100)throw new InvalidArgumentException('İşlem kimliği gerekli');return $r; }
 function ensureUser(int $uid): void { query('INSERT IGNORE INTO users(id) VALUES (?)',[$uid]); }
 function reserveWithdrawal(int $uid,array $b): array {
-    $n=cents($b['amount']??null);$r=rid($b);$dest=$b['destination']??'';
+    $n=cents($b['amount']??null);
+    if($n<10000)throw new InvalidArgumentException('Minimum çekim tutarı 100 TL’dir');
+    $r=rid($b);$dest=$b['destination']??'';
     if(!is_string($dest)||!tronAddress(trim($dest)))throw new InvalidArgumentException('Geçerli bir TRC20 cüzdan adresi girin');
     // Serialize operations for this user before checking the idempotency record.
     query('SELECT id FROM users WHERE id=? FOR UPDATE',[$uid]);

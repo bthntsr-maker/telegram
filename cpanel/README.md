@@ -51,3 +51,7 @@ Panel başvuru onayı/ret, şifre görüntüleme, TL bakiye ekleme, TRC20 ödeme
 Yönetici şifresi unutulursa cPanel yetkisiyle özel bot-admin-auth.json dosyası güvenli biçimde yedeklenip farklı ada taşınarak yeniden ilk kurulum yapılabilir. Mevcut oturumlar kayıtlı hash değiştiğinde geçersizleşir. bot-encryption.key dosyasına dokunmayın; hesap şifresini sıfırlamak uygulama hesap şifrelerini çözmek için gereken anahtarı değiştirmez.
 
 Testler: cpanel/tests/test_admin_http.py yalnızca kendi açıklamasındaki atılabilir, yerel test ortamında çalıştırılır; canlı sisteme karşı çalıştırmayın. Testler ilk hesap oluşturur ve giriş sayacını doldurur.
+
+## Minimum çekim: 100 TL
+
+`cpanel-minimum100-update.zip` yalnızca app/common.php, app/app.js ve app/view.html içerir. public_html içine çıkarıp bu üç dosyanın üzerine yazın. Güncelleme mevcut bakiyeleri, şifre anahtarlarını ve eski ödeme taleplerini değiştirmez; yeni ödeme taleplerinde minimum 100 TL (10.000 kuruş) uygulanır. Ekrandaki sayı alanı, JavaScript ve sunucu aynı sınırı kontrol eder. Önceden oluşturulmuş daha düşük talepler admin tarafından normal şekilde sonuçlandırılabilir. 99,99 TL'nin reddedildiği, bakiyenin değişmediği ve tam 100 TL'nin kabul/iadesi yerel MySQL testinde doğrulanmıştır.
