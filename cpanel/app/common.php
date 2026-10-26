@@ -84,15 +84,19 @@ function reserveWithdrawal(int $uid,array $b): array {
 function decideSubmission(array $b): array {
     $id=$b['id']??null;$action=$b['action']??'';
     if(!is_int($id)||!in_array($action,['approve','reject'],true))throw new InvalidArgumentException('Geçersiz işlem');
-    $n=$action==='approve'?cents($b['amount']??null):0;
+    $n=$action==='approve'?cents($b['amount']??1000):0;
+    $reason=$action==='reject'?rejectionReason($b['reason']??null):null;
     $row=query('SELECT * FROM submissions WHERE id=? FOR UPDATE',[$id])->fetch();
     if(!$row||$row['status']!=='pending')throw new InvalidArgumentException('Başvuru zaten işlendi veya yok');
     query('UPDATE submissions SET status=?,amount=? WHERE id=?',[$action==='approve'?'approved':'rejected',$n,$id]);
+    if($reason!==null)query('INSERT INTO rejection_reasons(kind,record_id,reason) VALUES (?,?,?)',['submission',$id,$reason]);
     if($n)query('UPDATE users SET balance=balance+? WHERE id=?',[$n,$row['user_id']]);
     return ['ok'=>true];
 }
 
 function ensureFeatures(): void {
+    db()->exec('CREATE TABLE IF NOT EXISTS gmail_claims (canonical VARCHAR(100) PRIMARY KEY, submission_id BIGINT NULL, FOREIGN KEY(submission_id) REFERENCES submissions(id)) ENGINE=InnoDB');
+    db()->exec('CREATE TABLE IF NOT EXISTS rejection_reasons (kind VARCHAR(16) NOT NULL, record_id BIGINT NOT NULL, reason TEXT NOT NULL, PRIMARY KEY(kind,record_id)) ENGINE=InnoDB');
     db()->exec('CREATE TABLE IF NOT EXISTS submission_credentials (submission_id BIGINT PRIMARY KEY, ciphertext TEXT NOT NULL, FOREIGN KEY(submission_id) REFERENCES submissions(id)) ENGINE=InnoDB');
     db()->exec("CREATE TABLE IF NOT EXISTS withdrawal_crypto (withdrawal_id BIGINT PRIMARY KEY, network VARCHAR(16) NOT NULL DEFAULT 'TRC20', sent_usdt VARCHAR(40) NULL, txid CHAR(64) NULL, FOREIGN KEY(withdrawal_id) REFERENCES withdrawals(id)) ENGINE=InnoDB");
 }
@@ -136,4 +140,21 @@ function tronAddress(string $address): bool {
 function usdtAmount(mixed $value): string {
     if(!is_string($value)||!preg_match('/^(?:0|[1-9][0-9]{0,11})(?:\.[0-9]{1,8})?$/D',$value)||!preg_match('/[1-9]/',$value))throw new InvalidArgumentException('Gönderilen USDT tutarını girin');
     return $value;
+}
+
+function canonicalGmail(string $email): string {
+    $local=explode('@',strtolower(trim($email)),2)[0];
+    return str_replace('.','',explode('+',$local,2)[0]).'@gmail.com';
+}
+function rejectionReason(mixed $reason): string {
+    if(!is_string($reason))throw new InvalidArgumentException('Ret gerekçesini yazın');
+    $reason=trim($reason);
+    if(!preg_match('//u',$reason))throw new InvalidArgumentException('Geçersiz ret gerekçesi');
+    $length=preg_match_all('/./us',$reason);
+    if($length<3||$length>500)throw new InvalidArgumentException('Ret gerekçesi 3–500 karakter olmalı');
+    return $reason;
+}
+function attachRejections(array $rows,string $kind): array {
+    foreach($rows as &$row){$reason=query('SELECT reason FROM rejection_reasons WHERE kind=? AND record_id=?',[$kind,$row['id']])->fetchColumn();$row['rejection_reason']=$reason===false?null:$reason;}unset($row);
+    return $rows;
 }

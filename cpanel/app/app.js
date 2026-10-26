@@ -22,16 +22,20 @@ function passwordControl(parent,row){
  box.append(b);parent.append(box);
 }
 function paymentDetails(e,r){
+ showRejection(e,r);
  e.append(node('p',r.network==='TRC20'?'USDT · TRC20':'Eski ödeme talebi'),node('p',r.destination));
  if(r.sent_usdt)e.append(node('p',`Gönderilen: ${r.sent_usdt} USDT`));
  if(r.txid)e.append(node('p',`TXID: ${r.txid}`));
 }
+function rejectionInput(e){const label=node('label','Ret gerekçesi');const input=node('textarea');input.maxLength=500;input.placeholder='Reddediyorsan nedenini yaz (3–500 karakter)';label.append(input);e.append(label);return input;}
+function rejectionText(input){const reason=input.value.trim();if(Array.from(reason).length<3||Array.from(reason).length>500)throw Error('Ret gerekçesi 3–500 karakter olmalı.');return reason;}
+function showRejection(e,row){if(row.rejection_reason)e.append(node('p',`Ret gerekçesi: ${row.rejection_reason}`));}
 let state;
 async function load(){state=await api('state');$('#demo-banner').hidden=!state.demo;$('#welcome').textContent=`Merhaba, ${state.name}`;$('#balance').textContent=money(state.balance);$('#storage-status').textContent=['postgresql','mysql'].includes(state.storage)?'Kalıcı veritabanı bağlı':'Geçici depolama · kayıtlar silinebilir';$('#admin-tab').hidden=!state.admin;
- list('#submissions',state.submissions,r=>{const e=card(r,`Başvuru #${r.id}`);proof(e,r.proof);if(r.amount)e.append(node('p',money(r.amount)));return e;});
+ list('#submissions',state.submissions,r=>{const e=card(r,`Başvuru #${r.id}`);proof(e,r.proof);if(r.amount)e.append(node('p',money(r.amount)));showRejection(e,r);return e;});
  list('#withdrawals',state.withdrawals,r=>{const e=card(r,`Talep #${r.id} · ${money(r.amount)}`);paymentDetails(e,r);return e;});
- if(state.admin){list('#pending-submissions',state.pending_submissions,r=>{const e=card(r,`#${r.id} · ${r.user_id}`);proof(e,r.proof);passwordControl(e,r);const input=node('input');input.type='number';input.step='0.01';input.min='0.01';input.placeholder='Onay tutarı (TL)';input.setAttribute('aria-label','Onay tutarı (TL)');e.append(input);const actions=node('div',undefined,'actions');actions.append(action('Onayla',()=>api('admin/submission',{id:r.id,action:'approve',amount:cents(input.value)})),action('Reddet',()=>api('admin/submission',{id:r.id,action:'reject'}),true));e.append(actions);return e;});
- list('#reviewed-submissions',state.reviewed_submissions||[],r=>{const e=card(r,`#${r.id} · ${r.user_id}`);proof(e,r.proof);passwordControl(e,r);return e;});
+ if(state.admin){list('#pending-submissions',state.pending_submissions,r=>{const e=card(r,`#${r.id} · ${r.user_id}`);proof(e,r.proof);passwordControl(e,r);const input=node('input');input.type='number';input.step='0.01';input.min='0.01';input.placeholder='Onay tutarı (TL)';input.value='10.00';input.setAttribute('aria-label','Onay tutarı (TL)');e.append(input);const reason=rejectionInput(e);const actions=node('div',undefined,'actions');actions.append(action('Onayla',()=>api('admin/submission',{id:r.id,action:'approve',amount:cents(input.value)})),action('Reddet',()=>api('admin/submission',{id:r.id,action:'reject',reason:rejectionText(reason)}),true));e.append(actions);return e;});
+ list('#reviewed-submissions',state.reviewed_submissions||[],r=>{const e=card(r,`#${r.id} · ${r.user_id}`);proof(e,r.proof);passwordControl(e,r);showRejection(e,r);return e;});
  list('#pending-withdrawals',state.pending_withdrawals,r=>{
   const e=card(r,`#${r.id} · ${money(r.amount)}`);e.append(node('p',`Kullanıcı: ${r.user_id}`));paymentDetails(e,r);
   let amountInput,txInput;
@@ -39,7 +43,7 @@ async function load(){state=await api('state');$('#demo-banner').hidden=!state.d
    const label=node('label','Gönderilen USDT tutarı');amountInput=node('input');amountInput.type='text';amountInput.inputMode='decimal';amountInput.placeholder='Örn. 3.25';label.append(amountInput);e.append(label);
    const txLabel=node('label','Transfer işlem kimliği (TXID)');txInput=node('input');txInput.type='text';txInput.maxLength=64;txInput.placeholder='64 karakterlik işlem kimliği';txLabel.append(txInput);e.append(txLabel);
   }
-  const actions=node('div',undefined,'actions');actions.append(action('Ödendi',async()=>{
+  const reason=rejectionInput(e);const actions=node('div',undefined,'actions');actions.append(action('Ödendi',async()=>{
    const data={id:r.id,action:'paid'};
    if(r.network==='TRC20'){
     data.sent_usdt=amountInput.value.trim().replace(',','.');data.txid=txInput.value.trim();
@@ -48,7 +52,7 @@ async function load(){state=await api('state');$('#demo-banner').hidden=!state.d
    }
    if(!confirm('TRC20 transferini tamamladın mı? Bu düğme para göndermez; yapılmış ödemeyi kaydeder.'))return false;
    return api('admin/withdrawal',data);
-  }),action('Reddet ve iade et',()=>api('admin/withdrawal',{id:r.id,action:'reject'}),true));e.append(actions);return e;
+  }),action('Reddet ve iade et',()=>api('admin/withdrawal',{id:r.id,action:'reject',reason:rejectionText(reason)}),true));e.append(actions);return e;
  });}
 
 }

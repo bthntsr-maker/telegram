@@ -55,3 +55,15 @@ Testler: cpanel/tests/test_admin_http.py yalnızca kendi açıklamasındaki atı
 ## Minimum çekim: 100 TL
 
 `cpanel-minimum100-update.zip` yalnızca app/common.php, app/app.js ve app/view.html içerir. public_html içine çıkarıp bu üç dosyanın üzerine yazın. Güncelleme mevcut bakiyeleri, şifre anahtarlarını ve eski ödeme taleplerini değiştirmez; yeni ödeme taleplerinde minimum 100 TL (10.000 kuruş) uygulanır. Ekrandaki sayı alanı, JavaScript ve sunucu aynı sınırı kontrol eder. Önceden oluşturulmuş daha düşük talepler admin tarafından normal şekilde sonuçlandırılabilir. 99,99 TL'nin reddedildiği, bakiyenin değişmediği ve tam 100 TL'nin kabul/iadesi yerel MySQL testinde doğrulanmıştır.
+
+## Görev şartları, 10 TL varsayılan ödül ve ret gerekçesi
+
+`cpanel-task-rules-update.zip` public_html içine çıkarılır. app/ ve admin/ altındaki ilgili uygulama dosyalarının üzerine yazılır; özel yapılandırma, şifreleme anahtarı, mevcut bakiyeler, webhook ve ilk kurulum dosyası değiştirilmez. Yeni yardımcı tablolar ilk yetkili istekte otomatik oluşturulur (CREATE izni gerekir). MySQL yedeklerini güncel tutun.
+
+Görev şartı: Gmail adresi ad ve soyad içermeli, rakam kullanılabilir. Örnek ahmet.yilmaz123@gmail.com. Ad-soyad uygunluğunu yönetici inceler; rastgele adları yazılımla doğruladığımız iddia edilmez. Onaylanan başvuru ödülü kullanıcı ekranında 10 TL olarak gösterilir; iki yönetim panelindeki tutar varsayılan 10 TL'dir, yönetici gerektiğinde tutarı değiştirebilir. API'de onay tutarı atlanırsa da 10 TL kullanılır.
+
+Aynı Gmail adresi bütün kullanıcılar ve önceki başvuru durumları genelinde yalnızca bir kez kabul edilir. Harf büyüklüğü, nokta farkları ve +etiketleri Gmail'in aynı posta kutusuna ait takma adları olarak ele alınır. Eski başvurular da kontrol edilir; geçmiş kayıtlar silinmez veya birleştirilmez. Aynı request_id ile yinelenen ağ isteği hata yerine aynı başvuru numarasını döndürür. Yeni taleplerde veritabanı benzersiz anahtarı eşzamanlı tekrarları engeller. Reddedilmiş adresin tekrar gönderilmesi de engellenir.
+
+Başvuru veya ödeme reddinde 3–500 karakterlik gerekçe zorunludur; kullanıcı kendi geçmişinde görebilir. Eski retlerde sonradan uydurma gerekçe oluşturulmaz. Geçersiz/missing gerekçe işlemi geri alır ve tutar iade edilmez; geçerli ödeme reddi tutarı yalnızca bir kez geri ekler. Minimum çekim 100 TL, ödeme yöntemi USDT/TRC20 ve şifreli saklama korunur.
+
+Güncelleme sonrası Mini App'i kapatıp yeniden açın; web admin panelinde Ctrl+F5 yapın. İki panelin de yeni sürümü yüklenene kadar eski JS'den gönderilen gerekçesiz retler sunucuda reddedilir.

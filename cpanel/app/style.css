@@ -3,3 +3,5 @@
 #demo-banner{background:#fff1cd;color:#775413;border:1px solid #eed89e;border-radius:12px;padding:14px;margin-bottom:16px;line-height:1.5;font-size:13px}
 
 .password-row{display:flex;gap:8px}.password-row input{flex:1}.password-row button{width:auto;background:#eaf4ee;color:var(--green)}.consent{display:flex;align-items:flex-start;font-size:12px;line-height:1.6;font-weight:400}.consent input{width:18px;height:18px;flex-shrink:0;margin-top:3px}.secret-panel{margin:12px 0}.secret-panel button{background:#eaf4ee;color:var(--green);font-size:12px;padding:10px}.crypto-note{font-size:12px;color:#698078}.item input{margin-top:10px}
+
+.task-rules{background:#edf6ef;border:1px solid #d7e9dc;border-radius:12px;padding:16px;margin:16px 0}.task-rules strong{color:#176d51}.task-rules p{font-size:13px;margin:8px 0}.item textarea{margin-top:8px;min-height:75px}

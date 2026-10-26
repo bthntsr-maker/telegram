@@ -29,6 +29,7 @@ try{
         $result['users']=query('SELECT id,balance FROM users ORDER BY id DESC LIMIT 100')->fetchAll();
         $result['payment_history']=query("SELECT w.*,c.network,c.sent_usdt,c.txid FROM withdrawals w LEFT JOIN withdrawal_crypto c ON c.withdrawal_id=w.id WHERE w.status<>'pending' ORDER BY w.id DESC LIMIT 100")->fetchAll();
     }
+    if($route==='dashboard')$result['payment_history']=attachRejections($result['payment_history'],'withdrawal');
     db()->commit();jsonResponse(200,$result);
 }catch(Throwable $e){try{if(db()->inTransaction())db()->rollBack();}catch(Throwable){}
     jsonResponse($e instanceof InvalidArgumentException?400:500,['error'=>$e instanceof InvalidArgumentException?$e->getMessage():'İşlem tamamlanamadı. Lütfen tekrar deneyin.']);}

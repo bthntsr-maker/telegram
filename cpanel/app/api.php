@@ -16,6 +16,9 @@ function dispatch(string $path,array $u,array $b): array {
             foreach($r['pending_submissions'] as &$row){$row['has_password']=(bool)query('SELECT 1 FROM submission_credentials WHERE submission_id=?',[$row['id']])->fetchColumn();}unset($row);
             $r['reviewed_submissions']=query("SELECT s.*, EXISTS(SELECT 1 FROM submission_credentials c WHERE c.submission_id=s.id) AS has_password FROM submissions s WHERE s.status<>'pending' ORDER BY s.id DESC LIMIT 100")->fetchAll();
         }
+        $r['submissions']=attachRejections($r['submissions'],'submission');
+        $r['withdrawals']=attachRejections($r['withdrawals'],'withdrawal');
+        if($admin)$r['reviewed_submissions']=attachRejections($r['reviewed_submissions'],'submission');
         return $r;
     }
     if($path==='submit') {
@@ -29,7 +32,13 @@ function dispatch(string $path,array $u,array $b): array {
         $r=rid($b);query('SELECT id FROM users WHERE id=? FOR UPDATE',[$uid]);
         $old=query('SELECT submission_id FROM web_submissions WHERE user_id=? AND request_id=?',[$uid,$r])->fetch();
         if($old)return ['id'=>(int)$old['submission_id']];
+        $canonical=canonicalGmail($p);
+        if(!query('INSERT IGNORE INTO gmail_claims(canonical) VALUES (?)',[$canonical])->rowCount())throw new InvalidArgumentException('Bu Gmail adresi daha önce gönderilmiş');
+        $local=explode('@',$canonical,2)[0];
+        $existing=query("SELECT id FROM submissions WHERE LOWER(TRIM(proof)) LIKE '%@gmail.com' AND REPLACE(SUBSTRING_INDEX(SUBSTRING_INDEX(LOWER(TRIM(proof)),'@',1),'+',1),'.','')=? LIMIT 1",[$local])->fetch();
+        if($existing)throw new InvalidArgumentException('Bu Gmail adresi daha önce gönderilmiş');
         query('INSERT INTO submissions(user_id,proof) VALUES (?,?)',[$uid,$p]);$id=(int)db()->lastInsertId();
+        query('UPDATE gmail_claims SET submission_id=? WHERE canonical=?',[$id,$canonical]);
         query('INSERT INTO submission_credentials VALUES (?,?)',[$id,encryptPassword($password,$id)]);
         query('INSERT INTO web_submissions VALUES (?,?,?)',[$uid,$r,$id]);return ['id'=>$id];
     }
@@ -57,6 +66,7 @@ function dispatch(string $path,array $u,array $b): array {
             if(!is_int($id)||!in_array($action,['paid','reject'],true))throw new InvalidArgumentException('Geçersiz işlem');
             $r=query('SELECT * FROM withdrawals WHERE id=? FOR UPDATE',[$id])->fetch();
             if(!$r||$r['status']!=='pending')throw new InvalidArgumentException('Talep zaten işlendi veya yok');
+            $reason=$action==='reject'?rejectionReason($b['reason']??null):null;
             $crypto=query('SELECT network FROM withdrawal_crypto WHERE withdrawal_id=?',[$id])->fetch();
             if($action==='paid'&&$crypto){
                 $usdt=usdtAmount($b['sent_usdt']??null);$txid=$b['txid']??'';
@@ -64,7 +74,7 @@ function dispatch(string $path,array $u,array $b): array {
                 query('UPDATE withdrawal_crypto SET sent_usdt=?,txid=? WHERE withdrawal_id=?',[$usdt,strtolower($txid),$id]);
             }
             query('UPDATE withdrawals SET status=? WHERE id=?',[$action==='paid'?'paid':'rejected',$id]);
-            if($action==='reject')query('UPDATE users SET balance=balance+? WHERE id=?',[$r['amount'],$r['user_id']]);return ['ok'=>true];
+            if($action==='reject'){query('INSERT INTO rejection_reasons(kind,record_id,reason) VALUES (?,?,?)',['withdrawal',$id,$reason]);query('UPDATE users SET balance=balance+? WHERE id=?',[$r['amount'],$r['user_id']]);}return ['ok'=>true];
         }
         if($path==='admin/import') {
             $backup=$b['backup']??[];
