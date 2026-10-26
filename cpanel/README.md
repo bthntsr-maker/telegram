@@ -67,3 +67,15 @@ Aynı Gmail adresi bütün kullanıcılar ve önceki başvuru durumları genelin
 Başvuru veya ödeme reddinde 3–500 karakterlik gerekçe zorunludur; kullanıcı kendi geçmişinde görebilir. Eski retlerde sonradan uydurma gerekçe oluşturulmaz. Geçersiz/missing gerekçe işlemi geri alır ve tutar iade edilmez; geçerli ödeme reddi tutarı yalnızca bir kez geri ekler. Minimum çekim 100 TL, ödeme yöntemi USDT/TRC20 ve şifreli saklama korunur.
 
 Güncelleme sonrası Mini App'i kapatıp yeniden açın; web admin panelinde Ctrl+F5 yapın. İki panelin de yeni sürümü yüklenene kadar eski JS'den gönderilen gerekçesiz retler sunucuda reddedilir.
+
+## Başka Telegram hesabına başvuru bildirimi
+
+`cpanel-notifications-update.zip` public_html içine çıkarılır; app/common.php, app/api.php, app/notifications.php ve admin panelinin ilgili dosyaları güncellenir. Yeni yardımcı tablolar otomatik oluşturulur. Özel config, token, şifreleme anahtarı, webhook, mevcut bakiyeler ve kayıtlar değişmez.
+
+https://botgmail.xyz/admin/ → Bildirimler bölümünü açın. Alıcı olacak Telegram hesabında önce mevcut botu açıp /start gönderin. @userinfobot ile öğrenilen pozitif sayısal kullanıcı kimliğini panelde girin, 'Yeni başvuru bildirimlerini aç'ı işaretleyin ve kaydedin. Test mesajı gönder ile bağlantıyı doğrulayın. Gerçek kimlik veya tokenın GitHub'a/sohbete yazılması gerekmez. Alıcıya admin yetkisi verilmez; panel bağlantısını açınca mevcut kullanıcı adı ve şifreyle giriş gerekir.
+
+Yeni başvuru kaydıyla aynı MySQL transaction içinde bildirimin gönderileceği hesap kuyruğa alınır. Ağ isteği transaction commit'ten sonra yapılır; Telegram hatası başvuruyu geri almaz. Bildirimde başvuru numarası, Gmail ve kullanıcı kimliği bulunur; şifre veya şifreli şifre verisi bulunmaz. Aynı request_id ile yinelenen istek yeni kuyruk kaydı oluşturmaz. Güncelleme öncesi başvurular topluca bildirilmez.
+
+Başarısız gönderimlerde artan bekleme süresiyle, sonraki uygulama/panel isteklerinde en fazla bir mesaj tekrar denenir; 5 denemeden sonra panelde 'Başarısız bildirimleri yeniden dene' kullanılabilir. Arka planda trafik olmadan çalışan zamanlayıcı kurulmuş değildir. Alıcı değişirse ya da bildirimler kapatılırsa gönderilmemiş önceki kuyruk iptal edilir (başlamış ağ isteği geri alınamaz). Telegram mesajı kabul ettikten sonra bağlantı koparsa teslim onayı bilinmeyebilir; böyle bir kesintide tekrar deneme mükerrer mesaja yol açabilir. Panel gönderilen/bekleyen/başarısız sayılarını gösterir.
+
+Testler cpanel/tests/notifications.php içindedir; yalnızca atılabilir yerel MySQL ve sahte Telegram göndericisiyle çalıştırılır. Testler gerçek Telegram hesabına mesaj göndermez. Canlı hesap doğrulaması paneldeki açık Test mesajı işlemiyle yapılır.

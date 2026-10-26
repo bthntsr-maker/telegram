@@ -25,9 +25,9 @@ function db(): PDO {
 }
 function query(string $sql, array $params=[]): PDOStatement { $s=db()->prepare($sql); $s->execute($params); return $s; }
 function isAdmin(int $uid): bool { return in_array($uid, array_map('intval', config()['admin_ids']), true); }
-function telegram(string $method, array $body): array {
+function telegram(string $method, array $body, int $timeout=25): array {
     $ch=curl_init('https://api.telegram.org/bot'.config()['bot_token'].'/'.$method);
-    curl_setopt_array($ch,[CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>json_encode($body,JSON_THROW_ON_ERROR),CURLOPT_HTTPHEADER=>['Content-Type: application/json'],CURLOPT_RETURNTRANSFER=>true,CURLOPT_CONNECTTIMEOUT=>10,CURLOPT_TIMEOUT=>25,CURLOPT_SSL_VERIFYPEER=>true,CURLOPT_SSL_VERIFYHOST=>2]);
+    curl_setopt_array($ch,[CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>json_encode($body,JSON_THROW_ON_ERROR),CURLOPT_HTTPHEADER=>['Content-Type: application/json'],CURLOPT_RETURNTRANSFER=>true,CURLOPT_CONNECTTIMEOUT=>min(10,$timeout),CURLOPT_TIMEOUT=>$timeout,CURLOPT_SSL_VERIFYPEER=>true,CURLOPT_SSL_VERIFYHOST=>2]);
     $raw=curl_exec($ch); $status=curl_getinfo($ch,CURLINFO_RESPONSE_CODE); curl_close($ch);
     if ($raw===false || $status!==200) throw new RuntimeException('Telegram request failed');
     $data=json_decode($raw,true,512,JSON_THROW_ON_ERROR);
@@ -95,6 +95,8 @@ function decideSubmission(array $b): array {
 }
 
 function ensureFeatures(): void {
+    db()->exec('CREATE TABLE IF NOT EXISTS notification_settings (id TINYINT PRIMARY KEY,chat_id BIGINT NULL,enabled TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
+    db()->exec("CREATE TABLE IF NOT EXISTS notification_outbox (id BIGINT AUTO_INCREMENT PRIMARY KEY,submission_id BIGINT NOT NULL,chat_id BIGINT NOT NULL,status VARCHAR(16) NOT NULL DEFAULT 'pending',attempts INT NOT NULL DEFAULT 0,next_attempt BIGINT NOT NULL DEFAULT 0,UNIQUE(submission_id,chat_id),FOREIGN KEY(submission_id) REFERENCES submissions(id)) ENGINE=InnoDB");
     db()->exec('CREATE TABLE IF NOT EXISTS gmail_claims (canonical VARCHAR(100) PRIMARY KEY, submission_id BIGINT NULL, FOREIGN KEY(submission_id) REFERENCES submissions(id)) ENGINE=InnoDB');
     db()->exec('CREATE TABLE IF NOT EXISTS rejection_reasons (kind VARCHAR(16) NOT NULL, record_id BIGINT NOT NULL, reason TEXT NOT NULL, PRIMARY KEY(kind,record_id)) ENGINE=InnoDB');
     db()->exec('CREATE TABLE IF NOT EXISTS submission_credentials (submission_id BIGINT PRIMARY KEY, ciphertext TEXT NOT NULL, FOREIGN KEY(submission_id) REFERENCES submissions(id)) ENGINE=InnoDB');

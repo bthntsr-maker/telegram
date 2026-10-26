@@ -21,15 +21,18 @@ try{
     if($route==='logout'){
         $_SESSION=[];session_destroy();setcookie('bot_admin_session','',['expires'=>time()-3600,'path'=>'/admin/','secure'=>true,'httponly'=>true,'samesite'=>'Strict']);jsonResponse(200,['ok'=>true]);
     }
-    if(!in_array($route,['dashboard','admin/submission','admin/withdrawal','admin/credit','admin/password'],true))throw new InvalidArgumentException('İşlem bulunamadı');
-    ensureFeatures();db()->beginTransaction();
+    if(!in_array($route,['dashboard','admin/submission','admin/withdrawal','admin/credit','admin/password','admin/notifications/save','admin/notifications/test','admin/notifications/retry'],true))throw new InvalidArgumentException('İşlem bulunamadı');
+    ensureFeatures();
+    if($route==='admin/notifications/test'){sendTestNotification();jsonResponse(200,['ok'=>true]);}
+    db()->beginTransaction();
     $result=dispatch($route==='dashboard'?'state':$route,$user,$body);
     if($route==='dashboard'){
+        $result['notifications']=notificationOverview();
         $result['summary']=['users'=>(int)query('SELECT COUNT(*) FROM users')->fetchColumn(),'balance'=>(int)query('SELECT COALESCE(SUM(balance),0) FROM users')->fetchColumn(),'pending_submissions'=>(int)query("SELECT COUNT(*) FROM submissions WHERE status='pending'")->fetchColumn(),'pending_withdrawals'=>(int)query("SELECT COUNT(*) FROM withdrawals WHERE status='pending'")->fetchColumn()];
         $result['users']=query('SELECT id,balance FROM users ORDER BY id DESC LIMIT 100')->fetchAll();
         $result['payment_history']=query("SELECT w.*,c.network,c.sent_usdt,c.txid FROM withdrawals w LEFT JOIN withdrawal_crypto c ON c.withdrawal_id=w.id WHERE w.status<>'pending' ORDER BY w.id DESC LIMIT 100")->fetchAll();
     }
     if($route==='dashboard')$result['payment_history']=attachRejections($result['payment_history'],'withdrawal');
-    db()->commit();jsonResponse(200,$result);
+    db()->commit();if(in_array($route,['dashboard','admin/notifications/retry'],true)){try{flushNotifications();}catch(Throwable){}}jsonResponse(200,$result);
 }catch(Throwable $e){try{if(db()->inTransaction())db()->rollBack();}catch(Throwable){}
     jsonResponse($e instanceof InvalidArgumentException?400:500,['error'=>$e instanceof InvalidArgumentException?$e->getMessage():'İşlem tamamlanamadı. Lütfen tekrar deneyin.']);}

@@ -63,7 +63,7 @@ check(authenticate(http_build_query($data))['id']===123,'signed Telegram identit
 $data['hash']=str_repeat('0',64);try{authenticate(http_build_query($data));throw new LogicException('forged auth accepted');}catch(RuntimeException $e){if($e instanceof LogicException)throw $e;echo "PASS forged authentication rejected\n";}
 $backup=['format'=>'telegram-wallet-v1','tables'=>[]];foreach(['users','submissions','withdrawals','credits','web_submissions'] as $t)$backup['tables'][$t]=query("SELECT * FROM $t")->fetchAll();
 try{callApi('admin/import',['backup'=>$backup],999);throw new LogicException('nonempty import allowed');}catch(InvalidArgumentException){echo "PASS nonempty import blocked\n";}
-foreach(['gmail_claims','rejection_reasons','submission_credentials','withdrawal_crypto','web_submissions','credits','withdrawals','submissions','users'] as $t)query("DELETE FROM $t");
+foreach(['notification_outbox','notification_settings','gmail_claims','rejection_reasons','submission_credentials','withdrawal_crypto','web_submissions','credits','withdrawals','submissions','users'] as $t)query("DELETE FROM $t");
 callApi('admin/import',['backup'=>$backup],999);
 check(callApi('state')['balance']===25000,'import preserves balance');
 check(count(callApi('state')['submissions'])===2,'import preserves history');

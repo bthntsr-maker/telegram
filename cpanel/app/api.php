@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-require_once __DIR__.'/common.php';
+require_once __DIR__.'/notifications.php';
 function dispatch(string $path,array $u,array $b): array {
     $uid=$u['id'];$admin=isAdmin($uid);ensureUser($uid);
     if($path==='state') {
@@ -40,11 +40,17 @@ function dispatch(string $path,array $u,array $b): array {
         query('INSERT INTO submissions(user_id,proof) VALUES (?,?)',[$uid,$p]);$id=(int)db()->lastInsertId();
         query('UPDATE gmail_claims SET submission_id=? WHERE canonical=?',[$id,$canonical]);
         query('INSERT INTO submission_credentials VALUES (?,?)',[$id,encryptPassword($password,$id)]);
-        query('INSERT INTO web_submissions VALUES (?,?,?)',[$uid,$r,$id]);return ['id'=>$id];
+        query('INSERT INTO web_submissions VALUES (?,?,?)',[$uid,$r,$id]);queueSubmissionNotification($id);return ['id'=>$id];
     }
     if($path==='withdraw')return reserveWithdrawal($uid,$b);
     if(str_starts_with($path,'admin/')) {
         if(!$admin)throw new DomainException('Admin yetkisi gerekli');
+        if($path==='admin/notifications/save')return saveNotificationSettings($b);
+        if($path==='admin/notifications/retry'){
+            $settings=notificationSettings();
+            if(!$settings['enabled'])throw new InvalidArgumentException('Önce bildirimleri açın');
+            query("UPDATE notification_outbox SET attempts=0,next_attempt=? WHERE status='failed' AND chat_id=?",[time(),$settings['chat_id']]);return ['ok'=>true];
+        }
         if($path==='admin/password') {
             $id=$b['id']??null;if(!is_int($id))throw new InvalidArgumentException('Başvuru numarası gerekli');
             $row=query('SELECT ciphertext FROM submission_credentials WHERE submission_id=?',[$id])->fetch();
@@ -104,7 +110,7 @@ if(realpath($_SERVER['SCRIPT_FILENAME']??'')===__FILE__) {
     try {
         $size=(int)($_SERVER['CONTENT_LENGTH']??0);if($size<1||$size>2097152)throw new InvalidArgumentException('İstek boyutu geçersiz');
         $body=json_decode(file_get_contents('php://input'),true,512,JSON_THROW_ON_ERROR);if(!is_array($body))throw new InvalidArgumentException('Geçersiz istek');
-        ensureFeatures();db()->beginTransaction();$result=dispatch($_GET['route']??'',$user,$body);db()->commit();jsonResponse(200,$result);
+        ensureFeatures();db()->beginTransaction();$result=dispatch($_GET['route']??'',$user,$body);db()->commit();if(in_array($_GET['route']??'',['submit','state'],true)){try{flushNotifications();}catch(Throwable){}}jsonResponse(200,$result);
     }catch(Throwable $e){if(isset($result))unset($result);try{if(db()->inTransaction())db()->rollBack();}catch(Throwable){}
         jsonResponse($e instanceof DomainException?403:($e instanceof InvalidArgumentException?400:500),['error'=>$e instanceof InvalidArgumentException||$e instanceof DomainException?$e->getMessage():'İşlem tamamlanamadı. Sunucu yapılandırmasını kontrol edin.']);}
 }
